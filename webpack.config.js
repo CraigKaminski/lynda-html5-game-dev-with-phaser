@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.ts',
@@ -22,9 +23,13 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Phaser Typescript Webpack Starter'
+      title: 'Bunny Defender',
+      template: './src/index.ejs'
     }),
-    new CleanWebpackPlugin(['dist'])
+    new CleanWebpackPlugin(['dist']),
+    new CopyWebpackPlugin([
+      { from: './src/assets' }
+    ])
   ],
   module: {
     rules: [
@@ -38,7 +43,7 @@ module.exports = {
         use: ['ts-loader']
       },
       {
-        test: /\.(png|jpg|gif)$/,
+        test: /\.(png|jpg|gif|mp3)$/,
         use: ['file-loader']
       },
       {

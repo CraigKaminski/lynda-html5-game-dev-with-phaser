@@ -1,5 +1,5 @@
 {
-  "name": "phaser-typescript-webpack-starter",
+  "name": "lynda-html5-game-dev-with-phaser",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "clean-webpack-plugin": "^0.1.17",
+    "copy-webpack-plugin": "^4.1.1",
     "expose-loader": "^0.7.3",
     "file-loader": "^1.1.5",
     "html-webpack-plugin": "^2.30.1",
