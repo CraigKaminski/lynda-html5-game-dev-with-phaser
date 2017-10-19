@@ -4,14 +4,14 @@ import 'pixi';
 import 'phaser';
 // tslint:enable:ordered-imports
 
-import GameState from './states/Game';
+import { Boot } from './states/Boot';
+import { Game } from './states/Game';
+import { Preloader } from './states/Preloader';
+import { StartMenu } from './states/StartMenu';
 
-class Game extends Phaser.Game {
-  constructor() {
-    super(800, 600, Phaser.AUTO, '', null);
-
-    this.state.add('game', GameState, true);
-  }
-}
-
-new Game(); // tslint:disable-line:no-unused-expression
+const game = new Phaser.Game(540, 960, Phaser.AUTO, '', null);
+game.state.add('Boot', Boot);
+game.state.add('Preloader', Preloader);
+game.state.add('StartMenu', StartMenu);
+game.state.add('Game', Game);
+game.state.start('Boot');
