@@ -3,6 +3,7 @@ export class Game extends Phaser.State {
   private bunnyGroup: Phaser.Group;
   private totalSpacerocks = 13;
   private spacerockGroup: Phaser.Group;
+  private burst: Phaser.Particles.Arcade.Emitter;
 
   public create() {
     this.buildWorld();
@@ -41,6 +42,16 @@ export class Game extends Phaser.State {
     }
   }
 
+  private buildEmitter() {
+    this.burst = this.add.emitter(0, 0, 80);
+    this.burst.minParticleScale = 0.3;
+    this.burst.maxParticleScale = 1.2;
+    this.burst.minParticleSpeed.setTo(-30, 30);
+    this.burst.maxParticleSpeed.setTo(30, -30);
+    this.burst.makeParticles('explosion');
+    this.input.onDown.add(this.fireBurst, this);
+  }
+
   private buildSpacerocks() {
     this.spacerockGroup = this.add.group();
     for (let i = 0; i < this.totalSpacerocks; i++) {
@@ -60,6 +71,12 @@ export class Game extends Phaser.State {
     }
   }
 
+  private fireBurst(pointer: Phaser.Input) {
+    this.burst.emitX = pointer.x;
+    this.burst.emitY = pointer.y;
+    this.burst.start(true, 2000, undefined, 20);
+  }
+
   private resetRock(r: Phaser.Sprite) {
     if (r.y > this.world.height) {
       this.respawnRock(r);
@@ -76,6 +93,7 @@ export class Game extends Phaser.State {
     this.add.image(0, 800, 'hill');
     this.buildBunnies();
     this.buildSpacerocks();
+    this.buildEmitter();
   }
 
   private startBunny(b: Phaser.Sprite) {
