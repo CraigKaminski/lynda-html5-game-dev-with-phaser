@@ -4,13 +4,31 @@ export class Game extends Phaser.State {
   private totalSpacerocks = 13;
   private spacerockGroup: Phaser.Group;
   private burst: Phaser.Particles.Arcade.Emitter;
+  private gameover = false;
+  private countdown: Phaser.BitmapText;
+  private overmessage: Phaser.BitmapText;
+  private secondsElapsed = 0;
+  private timer: Phaser.Timer;
+  private music: Phaser.Sound;
+  private ouch: Phaser.Sound;
+  private boom: Phaser.Sound;
+  private ding: Phaser.Sound;
 
   public create() {
+    this.timer = this.time.create(false);
+    this.timer.loop(1000, this.updateSeconds, this);
+    this.music = this.add.audio('game_audio');
+    this.music.play('', 0, 0.3, true);
+    this.ouch = this.add.audio('hurt_audio');
+    this.boom = this.add.audio('explosion_audio');
+    this.ding = this.add.audio('select_audio');
     this.buildWorld();
   }
 
   public update() {
-
+    this.physics.arcade.overlap(this.spacerockGroup, this.burst, this.burstCollision, undefined, this);
+    this.physics.arcade.overlap(this.spacerockGroup, this.bunnyGroup, this.bunnyCollision, undefined, this);
+    this.physics.arcade.overlap(this.bunnyGroup, this.burst, this.friendlyFire, undefined, this);
   }
 
   private assignBunnyMovement(b: Phaser.Sprite) {
@@ -24,6 +42,17 @@ export class Game extends Phaser.State {
     const t = this.add.tween(b).to({x: bPosition}, 3500, Phaser.Easing.Quadratic.InOut, true, bDelay);
     t.onStart.add(this.startBunny, this);
     t.onComplete.add(this.stopBunny, this);
+  }
+
+  private bunnyCollision(r: Phaser.Sprite, b: Phaser.Sprite) {
+    if (b.exists) {
+      this.ouch.play();
+      this.resetRock(r);
+      this.makeGhost(b);
+      b.kill();
+      this.totalBunnies--;
+      this.checkBunniesLeft();
+    }
   }
 
   private buildBunnies() {
@@ -48,7 +77,7 @@ export class Game extends Phaser.State {
     this.burst.maxParticleScale = 1.2;
     this.burst.minParticleSpeed.setTo(-30, 30);
     this.burst.maxParticleSpeed.setTo(30, -30);
-    this.burst.makeParticles('explosion');
+    this.burst.makeParticles('explosion', undefined, undefined, true);
     this.input.onDown.add(this.fireBurst, this);
   }
 
@@ -71,10 +100,68 @@ export class Game extends Phaser.State {
     }
   }
 
+  private buildWorld() {
+    this.add.image(0, 0, 'sky');
+    this.add.image(0, 800, 'hill');
+    this.buildBunnies();
+    this.buildSpacerocks();
+    this.buildEmitter();
+    this.countdown = this.add.bitmapText(10, 10, 'eightbitwonder', 'Bunnies Left ' + this.totalBunnies, 20);
+    this.timer.start();
+  }
+
+  private burstCollision(r: Phaser.Sprite, b: Phaser.Sprite) {
+    this.respawnRock(r);
+  }
+
+  private checkBunniesLeft() {
+    if (this.totalBunnies <= 0) {
+      this.gameover = true;
+      this.music.stop();
+      this.countdown.setText('Bunnies Left 0');
+      this.overmessage = this.add.bitmapText(this.world.centerX - 180, this.world.centerY - 40,
+        'eightbitwonder', 'GAME OVER\n\n' + this.secondsElapsed, 42);
+      this.overmessage.align = 'center';
+      this.overmessage.inputEnabled = true;
+      this.overmessage.events.onInputDown.addOnce(this.quitGame, this);
+    } else {
+      this.countdown.setText('Bunnies Left ' + this.totalBunnies);
+    }
+  }
+
   private fireBurst(pointer: Phaser.Input) {
-    this.burst.emitX = pointer.x;
-    this.burst.emitY = pointer.y;
-    this.burst.start(true, 2000, undefined, 20);
+    if (this.gameover === false) {
+      this.boom.play();
+      this.boom.volume = 0.2;
+      this.burst.emitX = pointer.x;
+      this.burst.emitY = pointer.y;
+      this.burst.start(true, 2000, undefined, 20);
+    }
+  }
+
+  private friendlyFire(b: Phaser.Sprite, e: Phaser.Sprite) {
+    if (b.exists) {
+      this.ouch.play();
+      this.makeGhost(b);
+      b.kill();
+      this.totalBunnies--;
+      this.checkBunniesLeft();
+    }
+  }
+
+  private makeGhost(b: Phaser.Sprite) {
+    const bunnyghost = this.add.sprite(b.x - 20, b.y - 180, 'ghost');
+    bunnyghost.anchor.setTo(0.5, 0.5);
+    bunnyghost.scale.x = b.scale.x;
+    this.physics.enable(bunnyghost, Phaser.Physics.ARCADE);
+    // bunnyghost.enableBody = true;
+    bunnyghost.checkWorldBounds = true;
+    bunnyghost.body.velocity.y = -800;
+  }
+
+  private quitGame(pointer: Phaser.Input) {
+    this.ding.play();
+    this.state.start('StartMenu');
   }
 
   private resetRock(r: Phaser.Sprite) {
@@ -84,16 +171,10 @@ export class Game extends Phaser.State {
   }
 
   private respawnRock(r: Phaser.Sprite) {
-    r.reset(this.rnd.integerInRange(0, this.world.width), this.rnd.realInRange(-1500, 0));
-    r.body.velocity.y = this.rnd.integerInRange(200, 400);
-  }
-
-  private buildWorld() {
-    this.add.image(0, 0, 'sky');
-    this.add.image(0, 800, 'hill');
-    this.buildBunnies();
-    this.buildSpacerocks();
-    this.buildEmitter();
+    if (this.gameover === false ) {
+      r.reset(this.rnd.integerInRange(0, this.world.width), this.rnd.realInRange(-1500, 0));
+      r.body.velocity.y = this.rnd.integerInRange(200, 400);
+    }
   }
 
   private startBunny(b: Phaser.Sprite) {
@@ -105,5 +186,9 @@ export class Game extends Phaser.State {
     b.animations.stop('Walk');
     b.animations.play('Rest', 24, true);
     this.assignBunnyMovement(b);
+  }
+
+  private updateSeconds() {
+    this.secondsElapsed++;
   }
 }
