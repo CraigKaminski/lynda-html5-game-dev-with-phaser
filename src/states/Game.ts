@@ -1,6 +1,8 @@
 export class Game extends Phaser.State {
   private totalBunnies = 20;
   private bunnyGroup: Phaser.Group;
+  private totalSpacerocks = 13;
+  private spacerockGroup: Phaser.Group;
 
   public create() {
     this.buildWorld();
@@ -39,10 +41,41 @@ export class Game extends Phaser.State {
     }
   }
 
+  private buildSpacerocks() {
+    this.spacerockGroup = this.add.group();
+    for (let i = 0; i < this.totalSpacerocks; i++) {
+      const randomX = this.rnd.integerInRange(0, this.world.width);
+      const randomY = this.rnd.realInRange(-1500, 0);
+      const r = this.spacerockGroup.create(randomX, randomY, 'spacerock', 'SpaceRock0000');
+      const scale = this.rnd.realInRange(0.3, 1.0);
+      r.scale.x = scale;
+      r.scale.y = scale;
+      this.physics.enable(r, Phaser.Physics.ARCADE);
+      r.enableBody = true;
+      r.body.velocity.y = this.rnd.integerInRange(200, 400);
+      r.animations.add('Fall');
+      r.animations.play('Fall', 24, true);
+      r.checkWorldBounds = true;
+      r.events.onOutOfBounds.add(this.resetRock, this);
+    }
+  }
+
+  private resetRock(r: Phaser.Sprite) {
+    if (r.y > this.world.height) {
+      this.respawnRock(r);
+    }
+  }
+
+  private respawnRock(r: Phaser.Sprite) {
+    r.reset(this.rnd.integerInRange(0, this.world.width), this.rnd.realInRange(-1500, 0));
+    r.body.velocity.y = this.rnd.integerInRange(200, 400);
+  }
+
   private buildWorld() {
     this.add.image(0, 0, 'sky');
     this.add.image(0, 800, 'hill');
     this.buildBunnies();
+    this.buildSpacerocks();
   }
 
   private startBunny(b: Phaser.Sprite) {
